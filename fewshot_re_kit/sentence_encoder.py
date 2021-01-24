@@ -69,8 +69,8 @@ class BERTSentenceEncoder(nn.Module):
 
     def forward(self, inputs):
         if not self.cat_entity_rep:
-            _, x = self.bert(inputs['word'], attention_mask=inputs['mask'])
-            return x
+            x = self.bert(inputs['word'], attention_mask=inputs['mask'])
+            return x[1]
         else:
             outputs = self.bert(inputs['word'], attention_mask=inputs['mask'])
             tensor_range = torch.arange(inputs['word'].size()[0])
