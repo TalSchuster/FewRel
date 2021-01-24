@@ -24,7 +24,7 @@ def main():
             help='train file')
     parser.add_argument('--val', default='val_wiki',
             help='val file')
-    parser.add_argument('--test', default='test_wiki',
+    parser.add_argument('--test', default='val_wiki',
             help='test file')
     parser.add_argument('--adv', default=None,
             help='adv file')
@@ -38,7 +38,7 @@ def main():
             help='Num of query per class')
     parser.add_argument('--batch_size', default=4, type=int,
             help='batch size')
-    parser.add_argument('--train_iter', default=30000, type=int,
+    parser.add_argument('--train_iter', default=20000, type=int,
             help='num of iters in training')
     parser.add_argument('--val_iter', default=1000, type=int,
             help='num of iters in validation')
@@ -195,6 +195,8 @@ def main():
         prefix += '-catentity'
     if len(opt.ckpt_name) > 0:
         prefix += '-' + opt.ckpt_name
+
+    prefix = prefix.replace('/', '__')
     
     if model_name == 'proto':
         model = Proto(sentence_encoder, dot=opt.dot)

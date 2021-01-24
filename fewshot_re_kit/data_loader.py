@@ -113,6 +113,92 @@ def get_loader(name, encoder, N, K, Q, batch_size,
             collate_fn=collate_fn)
     return iter(data_loader)
 
+class FewRelDatasetWithClass(FewRelDataset):
+    """
+    FewRel Dataset that also returns the class name.
+    """
+    def __getitem__(self, index):
+        target_classes = random.sample(self.classes, self.N)
+        support_set = {'word': [], 'pos1': [], 'pos2': [], 'mask': [] }
+        query_set = {'word': [], 'pos1': [], 'pos2': [], 'mask': [] }
+        query_label = []
+        classes = []
+        Q_na = int(self.na_rate * self.Q)
+        na_classes = list(filter(lambda x: x not in target_classes,  
+            self.classes))
+
+        for i, class_name in enumerate(target_classes):
+            indices = np.random.choice(
+                    list(range(len(self.json_data[class_name]))), 
+                    self.K + self.Q, False)
+            count = 0
+            for j in indices:
+                word, pos1, pos2, mask = self.__getraw__(
+                        self.json_data[class_name][j])
+                word = torch.tensor(word).long()
+                pos1 = torch.tensor(pos1).long()
+                pos2 = torch.tensor(pos2).long()
+                mask = torch.tensor(mask).long()
+                if count < self.K:
+                    self.__additem__(support_set, word, pos1, pos2, mask)
+                else:
+                    self.__additem__(query_set, word, pos1, pos2, mask)
+                count += 1
+
+            query_label += [i] * self.Q
+            classes += [class_name] * self.Q
+
+        # NA
+        for j in range(Q_na):
+            cur_class = np.random.choice(na_classes, 1, False)[0]
+            index = np.random.choice(
+                    list(range(len(self.json_data[cur_class]))),
+                    1, False)[0]
+            word, pos1, pos2, mask = self.__getraw__(
+                    self.json_data[cur_class][index])
+            word = torch.tensor(word).long()
+            pos1 = torch.tensor(pos1).long()
+            pos2 = torch.tensor(pos2).long()
+            mask = torch.tensor(mask).long()
+            self.__additem__(query_set, word, pos1, pos2, mask)
+        query_label += [self.N] * Q_na
+        classes += [cur_class] * Q_na
+
+        return support_set, query_set, query_label, classes
+
+
+def collate_fn_wclass(data):
+    batch_support = {'word': [], 'pos1': [], 'pos2': [], 'mask': []}
+    batch_query = {'word': [], 'pos1': [], 'pos2': [], 'mask': []}
+    batch_label = []
+    support_sets, query_sets, query_labels, query_classes = zip(*data)
+    for i in range(len(support_sets)):
+        for k in support_sets[i]:
+            batch_support[k] += support_sets[i][k]
+        for k in query_sets[i]:
+            batch_query[k] += query_sets[i][k]
+        batch_label += query_labels[i]
+        batch_classes += query_classes[i]
+    for k in batch_support:
+        batch_support[k] = torch.stack(batch_support[k], 0)
+    for k in batch_query:
+        batch_query[k] = torch.stack(batch_query[k], 0)
+    batch_label = torch.tensor(batch_label)
+    return batch_support, batch_query, batch_label, batch_classes
+
+
+def get_loader_wclass(name, encoder, N, K, Q, batch_size, 
+        num_workers=8, collate_fn=collate_fn_wclass, na_rate=0, root='./data'):
+    dataset = FewRelDatasetWithClass(name, encoder, N, K, Q, na_rate, root)
+    data_loader = data.DataLoader(dataset=dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            pin_memory=True,
+            num_workers=num_workers,
+            collate_fn=collate_fn)
+    return iter(data_loader)
+
+
 class FewRelDatasetPair(data.Dataset):
     """
     FewRel Pair Dataset
