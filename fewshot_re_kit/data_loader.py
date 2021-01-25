@@ -13,7 +13,7 @@ class FewRelDataset(data.Dataset):
         self.root = root
         path = os.path.join(root, name + ".json")
         if not os.path.exists(path):
-            print("[ERROR] Data file does not exist!")
+            print(f"[ERROR] Data file does not exist: {path}")
             assert(0)
         self.json_data = json.load(open(path))
         self.classes = list(self.json_data.keys())
@@ -162,7 +162,6 @@ class FewRelDatasetWithClass(FewRelDataset):
             mask = torch.tensor(mask).long()
             self.__additem__(query_set, word, pos1, pos2, mask)
         query_label += [self.N] * Q_na
-        classes += [cur_class] * Q_na
 
         return support_set, query_set, query_label, classes
 
@@ -171,6 +170,7 @@ def collate_fn_wclass(data):
     batch_support = {'word': [], 'pos1': [], 'pos2': [], 'mask': []}
     batch_query = {'word': [], 'pos1': [], 'pos2': [], 'mask': []}
     batch_label = []
+    batch_classes = []
     support_sets, query_sets, query_labels, query_classes = zip(*data)
     for i in range(len(support_sets)):
         for k in support_sets[i]:

@@ -2,6 +2,9 @@
 checkpoint
 test_result
 
+#vim
+*.swp
+
 # files
 *.pyc
 *.swp

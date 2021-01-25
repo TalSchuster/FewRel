@@ -1,8 +1,7 @@
 import sys
-sys.path.append('..')
-import fewshot_re_kit
-from fewshot_re_kit.network.embedding import Embedding
-from fewshot_re_kit.network.encoder import Encoder
+import FewRel.fewshot_re_kit as fewshot_re_kit
+from FewRel.fewshot_re_kit.network.embedding import Embedding
+from FewRel.fewshot_re_kit.network.encoder import Encoder
 import torch
 from torch import autograd, optim, nn
 from torch.autograd import Variable
